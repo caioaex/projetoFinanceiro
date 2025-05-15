@@ -8,32 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  id         Int          @id @default(autoincrement())
-  name       String
-  email      String       @unique
-  password   String
-  createdAt  DateTime     @default(now())
-  Bills      Bills[]
-  Categories Categories[]
-}
-
-model Bills {
-  id     Int    @id @default(autoincrement())
-  name   String
-  type   ECategoryType
-  user   Users? @relation(fields: [userId], references: [id])
-  userId Int?
-}
-
-model Categories {
-  id     Int    @id @default(autoincrement())
-  name   String
-  type   String
-  user   Users? @relation(fields: [userId], references: [id])
-  userId Int?
-}
-
 enum ECategoryType {
   EXPENSE
   REVENUE
@@ -41,5 +15,86 @@ enum ECategoryType {
 
 enum ERepetitionType {
   DIARY
-  
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model User {
+  id         Int          @id @default(autoincrement())
+  name       String
+  email      String       @unique
+  password   String
+  createdAt  DateTime     @default(now())
+  bills      Bill[]
+  categories Category[]
+}
+
+model Bill {
+  id         Int        @id @default(autoincrement())
+  name       String
+  amount     Float
+  dueDate    DateTime
+  paid       Boolean    @default(false)
+
+  user       User       @relation(fields: [userId], references: [id])
+  userId     Int
+
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+
+  transactions Transaction[]
+}
+
+model Category {
+  id     Int    @id @default(autoincrement())
+  name   String
+  type   ECategoryType
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  bills Bill[]
+  transactions Transaction[]
+}
+
+model Repetition {
+  id        Int            @id @default(autoincrement())
+  type      ERepetitionType
+  startDate DateTime
+  endDate   DateTime?
+  interval  Int
+
+  transactions Transaction[]
+}
+
+model Installment {
+  id               Int           @id @default(autoincrement())
+  installmentNumber Int
+  amount           Float
+  dueDate          DateTime
+  paid             Boolean
+
+  transaction      Transaction   @relation(fields: [transactionId], references: [id])
+  transactionId    Int
+}
+
+model Transaction {
+  id            Int           @id @default(autoincrement())
+  description   String
+  amount        Float
+  type          ECategoryType // EXPENSE or REVENUE
+  date          DateTime
+  paid          Boolean
+  paymentDate   DateTime?
+
+  bill       Bill       @relation(fields: [billId], references: [id])
+  billId     Int
+
+  category      Category      @relation(fields: [categoryId], references: [id])
+  categoryId    Int
+
+  repetition    Repetition?   @relation(fields: [repetitionId], references: [id])
+  repetitionId  Int?
+
+  installments  Installment[]
 }
